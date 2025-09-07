@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NAPLEX Mock Exam — 225 Questions</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #111827; --muted: #94a3b8; --text: #e5e7eb; --accent: #38bdf8; --accent-2: #22c55e; --danger: #f43f5e; --warn: #f59e0b; --border: #1f2937;
+    }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: linear-gradient(180deg, #0b1020, #0f172a 30%); color: var(--text); }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    .card { background: rgba(17,24,39,0.9); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
+    h1 { margin: 0 0 6px; font-size: 24px; }
+    .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+    .gate { display: grid; gap: 12px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+    input[type="password"], input[type="text"] { background: #0b1224; color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 12px; width: 100%; }
+    button { background: var(--accent); color: #001018; border: none; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; }
+    button.sec { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; color: var(--muted); font-size: 13px; }
+    .badge { border: 1px solid var(--border); padding: 4px 8px; border-radius: 999px; }
+
+    .controls { display:flex; gap:8px; flex-wrap:wrap; margin: 8px 0 16px; }
+
+    .question { border-top: 1px dashed var(--border); padding-top: 18px; margin-top: 18px; }
+    .qtitle { font-weight: 700; margin: 0 0 8px; }
+    .qstem { line-height: 1.55; }
+    .options { margin-top: 10px; display: grid; gap: 8px; }
+    .opt { background: #0b1224; border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: flex; gap: 10px; align-items: flex-start; }
+    .opt input { margin-top: 3px; }
+
+    .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+    .results { margin-top: 24px; }
+    .scoreBox { background: #0b1224; border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: grid; gap: 8px; }
+    .scoreBox .good { color: var(--accent-2); font-weight: 700; }
+    .scoreBox .warn { color: var(--warn); font-weight: 700; }
+    .scoreBox .bad { color: var(--danger); font-weight: 700; }
+
+    details { background: rgba(8,12,24,0.8); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+    summary { cursor: pointer; }
+    .incorrectItem { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 10px; }
+    .correct { color: var(--accent-2); }
+    .incorrect { color: var(--danger); }
+    .footer { margin-top: 24px; color: var(--muted); font-size: 12px; text-align: center; }
+
+    .pagination { display:flex; gap:6px; flex-wrap:wrap; margin-top: 12px; }
+    .pageBtn { background:#0b1224; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:6px 10px; cursor:pointer; }
+    .pageBtn.active { outline:2px solid var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>NAPLEX Mock Exam — 225 Questions</h1>
+      <div class="sub">Mirrors NAPLEX style: case-based single-best answer, blueprint-balanced across therapeutics, calculations, compounding, and safety. Timer, autosave, randomized order, and review of incorrect items included.</div>
+
+      <!-- Password Gate -->
+      <div id="gate" class="gate">
+        <div class="row">
+          <label for="pw">Enter Exam Password</label>
+          <input id="pw" type="password" placeholder="Enter password to begin" />
+        </div>
+        <div class="row">
+          <div></div>
+          <div style="display:flex; gap:8px;">
+            <button id="beginBtn">Begin</button>
+            <button class="sec" id="hintBtn" title="Show default password">Hint</button>
+          </div>
+        </div>
+        <div class="sub">Default password: <span class="badge" id="masked">••••••••</span></div>
+      </div>
+
+      <!-- Exam Meta -->
+      <div id="meta" class="meta" style="display:none;">
+        <div class="badge" id="timer">Timer: 00:00</div>
+        <div class="badge">Questions: <span id="qcount">225</span></div>
+        <div class="badge">Format: Single-best answer (A–D)</div>
+        <div class="badge">Review mode: Incorrect-only after submission</div>
+      </div>
+
+      <div class="controls" id="controls" style="display:none;">
+        <button class="sec" id="saveBtn">Save Progress</button>
+        <button class="sec" id="resetBtn">Reset</button>
+        <button class="sec" id="exportBtn" title="Export answers JSON">Export</button>
+        <button class="sec" id="newFormBtn" title="Generate a brand-new randomized exam (requires admin password)">New Form</button>
+      </div>
+
+      <!-- Exam Area -->
+      <div id="exam" style="display:none;">
+        <div class="pagination" id="pagination"></div>
+        <div id="qwrap"></div>
+        <div class="actions">
+          <button id="submitBtn">Submit Exam</button>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="results" class="results" style="display:none;"></div>
+
+      <div class="footer">© Mock exam for educational use. Not affiliated with NABP.</div>
+    </div>
+  </div>
+
+  <script>
+    // ========= CONFIG =========
+    let examPassword = "naplex225"; // change as desired (can also be changed via New Form)
+    const REFRESH_PASSWORD = "formadmin225"; // admin password required to generate a brand-new randomized form
+    const EXAM_ID = "naplex_mock_225_v1"; // storage key
+    const TOTAL_QUESTIONS = 225;
+    const PAGE_SIZE = 15; // 15 Q per page -> 15 pages
+
+    // Blueprint target distribution (approx.): 67% therapeutics/safety, 33% calc/compounding
+    const TARGET = {
+      therapeutics: 120, // med mgmt across cardio, ID, endocrine, pulm, neuro/psych, renal, heme/onc, GI, endocrine, derm, etc.
+      safety: 30,        // med safety, REMS, interactions, monitoring
+      calculations: 55,  // dosing, PK, TPN, IV rates, conversions
+      compounding: 20    // sterile/non-sterile, USP <795>/<797>/<800>, dilution/alligation
+    };
+
+    // ========= RNG & UTIL =========
+    let seed = 20250906; // deterministic default; change per cohort
+    function srand(n){ seed = (1103515245* (seed + n) + 12345) % 2**31; return seed; }
+    function rand(){ seed = (1103515245* seed + 12345) % 2**31; return seed/2**31; }
+    function randint(a,b){ return Math.floor(rand()*(b-a+1))+a; }
+    function shuffle(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(rand()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+    // ========= QUESTION FACTORIES =========
+    // To keep code compact yet high-fidelity, we generate questions from validated templates with computed answers & rationales.
+    // Each factory returns objects: {topic, stem, choices[4], correctIndex, rationale}
+
+    const DRUGS = {
+      hfreftx: ["ACEi/ARB/ARNI","Beta-blocker (carvedilol/metoprolol succinate/bisoprolol)","MRA (spironolactone/eplerenone)","SGLT2 inhibitor"],
+      liveVaccines: ["MMR","Varicella","Zoster (live)","Yellow fever"],
+      qtHigh: ["Ziprasidone","Thioridazine","Haloperidol IV","Quinidine"],
+      fluoroquinolones: ["Ciprofloxacin","Levofloxacin","Moxifloxacin"],
+    };
+
+    function q_hf_addOn(){
+      const k = randint(38, 48)/10; // 3.8–4.8 K
+      const scr = randint(7, 15)/10; // 0.7–1.5
+      const opts = ["Start spironolactone","Add digoxin","Start amlodipine","Switch to sacubitril/valsartan now"];
+      const stem = `A 62-year-old with HFrEF (EF 28%), NYHA II on lisinopril, metoprolol succinate, and furosemide. K = ${k.toFixed(1)} mEq/L, SCr = ${scr.toFixed(1)} mg/dL. Which next step best reduces morbidity/mortality?`;
+      return { topic: "Cardiology — HFrEF", stem, choices: opts, correctIndex: 0, rationale: "With acceptable K and renal function, adding an MRA (spironolactone) improves survival. Digoxin improves symptoms; amlodipine has no mortality benefit; ARNI is a switch from ACEi, not add-on." };
+    }
+
+    function q_af_chadsvasc(){
+      const age = randint(55, 84);
+      const sex = rand()<0.5?"male":"female";
+      const dm = rand()<0.5; const htn = rand()<0.6; const hf = rand()<0.4; const vasc = rand()<0.4; const stroke = rand()<0.2;
+      const score = (sex==="female"?1:0) + (age>=75?2:(age>=65?1:0)) + (htn?1:0) + (dm?1:0) + (hf?1:0) + (vasc?1:0) + (stroke?2:0);
+      const stem = `A ${age}-year-old ${sex} with nonvalvular AF has ${htn?"HTN, ":""}${dm?"DM, ":""}${hf?"HFrEF, ":""}${vasc?"vascular disease, ":""}${stroke?"prior TIA/stroke, ":""}CHADS-VASc = ${score}. Best antithrombotic approach?`;
+      const choices = ["No therapy", "Aspirin alone", "Oral anticoagulant (DOAC/warfarin)", "Dual antiplatelet therapy"];
+      const correctIndex = score>=2?2:(score===1 && sex==="female"?2: (score===1?2:0));
+      return { topic:"Cardiology — AF", stem, choices, correctIndex, rationale:"Anticoagulation recommended for CHADS-VASc ≥2 in men or ≥3 in women; consider for 1 depending on risks; aspirin/DAPT not preferred." };
+    }
+
+    function q_uTI(){
+      const choices = ["Nitrofurantoin 100 mg BID × 5 days","Ciprofloxacin 500 mg BID × 3 days","Amoxicillin–clavulanate 875 mg BID × 7 days","Fosfomycin 3 g once"];
+      const correctIndex = rand()<0.7?0:3; // nitrofurantoin or fosfomycin
+      const stem = "A 22-year-old woman with acute uncomplicated cystitis, no allergies. Most appropriate first-line regimen?";
+      return { topic:"ID — Cystitis", stem, choices, correctIndex, rationale:"First-line: nitrofurantoin × 5 days or single-dose fosfomycin per guidelines; avoid FQs when alternatives exist." };
+    }
+
+    function q_pna(){
+      const comorb = rand()<0.5;
+      const stem = `Outpatient CAP ${comorb?"with" : "without"} comorbidities. Choose preferred empiric regimen.`;
+      const choices = comorb ? ["Amoxicillin alone","Doxycycline alone","Amox/clav + macrolide or doxycycline","Levofloxacin + azithromycin"] : ["Amoxicillin high-dose","Levofloxacin","Ceftriaxone","Piperacillin/tazobactam"];
+      const correctIndex = comorb?2:0;
+      return { topic:"ID — CAP", stem, choices, correctIndex, rationale: comorb?"With comorbidities: amox/clav + macrolide/doxy or respiratory FQ.":"Without comorbidities: amoxicillin high-dose or doxycycline." };
+    }
+
+    function q_diabetesInsulin(){
+      const choices=["Glargine","Detemir","NPH","Lispro"];
+      return { topic:"Endocrine — Insulins", stem:"Which insulin is rapid-acting?", choices, correctIndex:3, rationale:"Lispro/aspart/glulisine are rapid-acting; glargine/detemir are basal; NPH intermediate." };
+    }
+
+    function q_bisphosphonate(){
+      const choices=["Take with food","Take with full glass of water, remain upright 30–60 min","Take at bedtime","May crush tablets for easier swallowing"];
+      return { topic:"Counseling — Alendronate", stem:"Which counseling point is correct?", choices, correctIndex:1, rationale:"To reduce esophageal irritation: take with water, empty stomach, remain upright." };
+    }
+
+    function q_vancoTrough(){
+      const choices=["1 hour post-dose","Anytime on day 1","Immediately after load","At steady state, before the 4th dose"];
+      return { topic:"ID — Vancomycin", stem:"Optimal timing for trough level?", choices, correctIndex:3, rationale:"Draw trough at steady state, typically prior to 4th dose." };
+    }
+
+    function q_qtAntipsych(){
+      const choices=["Ziprasidone","Aripiprazole","Olanzapine","Haloperidol (oral)"];
+      return { topic:"Psych — QTc", stem:"Which antipsychotic carries highest QTc risk?", choices, correctIndex:0, rationale:"Ziprasidone > many others for QTc prolongation risk." };
+    }
+
+    function q_trastuzumab(){
+      const choices=["Pulmonary function tests","LVEF (echocardiogram/MUGA)","Thyroid function","CBC with differential weekly" ];
+      return { topic:"Oncology — Trastuzumab", stem:"Baseline/ongoing monitoring most critical with trastuzumab?", choices, correctIndex:1, rationale:"HER2 mAb can cause cardiomyopathy; monitor LVEF." };
+    }
+
+    // ---- Calculations templates ----
+    function q_calc_doseMgKg(){
+      const wt = randint(50, 110); // kg
+      const dose = [2,5,7.5,10][randint(0,3)];
+      const total = wt * dose;
+      const stem = `Order: gentamicin ${dose} mg/kg IV once daily. Patient weight ${wt} kg. What is the dose (mg)?`;
+      const correct = total;
+      const choices=[correct, Math.round(correct*0.9), Math.round(correct*1.1), correct+40];
+      const shuffledC = shuffle(choices);
+      const idx = shuffledC.indexOf(correct);
+      return { topic:"Calculations — mg/kg", stem, choices: shuffledC.map(x=>x+" mg"), correctIndex: idx, rationale:`Dose = ${dose} mg/kg × ${wt} kg = ${total} mg.` };
+    }
+
+    function q_calc_ivRate(){
+      const vol = [250,500,1000][randint(0,2)];
+      const hours = [1,2,4,8][randint(0,3)];
+      const rate = Math.round(vol/hours);
+      const stem = `Infuse ${vol} mL over ${hours} hour(s). What is the rate in mL/hr?`;
+      const choices=[rate, rate-25, rate+25, rate+50];
+      const shuffledC = shuffle(choices);
+      const idx = shuffledC.indexOf(rate);
+      return { topic:"Calculations — IV rate", stem, choices: shuffledC.map(x=>x+" mL/hr"), correctIndex: idx, rationale:`Rate = Volume/Time = ${vol}/${hours} = ${rate} mL/hr.` };
+    }
+
+    function q_calc_dextroseKcal(){
+      const grams = [25,50,75,100][randint(0,3)];
+      const kcal = grams * 3.4;
+      const stem = `A bag contains ${grams} g dextrose. How many kcal does this provide? (3.4 kcal/g)`;
+      const choices=[kcal, kcal-68, kcal+68, kcal+102].map(v=>Math.round(v));
+      const shuffledC = shuffle(choices);
+      const idx = shuffledC.indexOf(Math.round(kcal));
+      return { topic:"Calculations — Nutrition", stem, choices: shuffledC.map(x=>x+" kcal"), correctIndex: idx, rationale:`kcal = grams × 3.4 = ${grams} × 3.4 = ${kcal}.` };
+    }
+
+    function q_calc_mEqNaCl(){
+      const grams = [0.5,1,1.5][randint(0,2)];
+      const mEq = Math.round((grams/58.5)*1000*10)/10; // valence 1
+      const stem = `How many mEq are in ${grams} g of NaCl? (MW 58.5 g/mol, valence 1)`;
+      const correct = mEq;
+      const choices=[correct, +(correct+8.5).toFixed(1), +(correct-8.5).toFixed(1), +(correct+17.1).toFixed(1)];
+      const shuffledC = shuffle(choices);
+      const idx = shuffledC.indexOf(correct);
+      return { topic:"Calculations — mEq", stem, choices: shuffledC.map(x=>x+" mEq"), correctIndex: idx, rationale:`mEq = (g/MW) × valence × 1000 = (${grams}/58.5) × 1 × 1000 = ${mEq} mEq.` };
+    }
+
+    function q_alligation(){
+      const need = [5,10,20][randint(0,2)];
+      const high = [20,25,30][randint(0,2)];
+      const vol = [120,240,500][randint(0,2)];
+      const low = 0; // diluent
+      // parts high = need - low = need; parts low = high - need
+      const partsH = need - low; const partsL = high - need; const totalParts = partsH + partsL;
+      const Vh = Math.round((partsH/totalParts)*vol);
+      const Vl = vol - Vh;
+      const stem = `Prepare ${vol} mL of a ${need}% solution using ${high}% stock and diluent. How much stock and diluent?`;
+      const choices = [ `${Vh} mL stock + ${Vl} mL diluent`, `${Vl} mL stock + ${Vh} mL diluent`, `${Math.max(0,Vh-20)} mL stock + ${Math.min(vol, Vl+20)} mL diluent`, `${Vh+20} mL stock + ${Math.max(0, Vl-20)} mL diluent`];
+      return { topic:"Compounding — Alligation", stem, choices, correctIndex: 0, rationale:`Alligation: parts high = ${need}-${low}=${partsH}; parts low = ${high}-${need}=${partsL}. Stock volume = (partsH/total)*${vol} = ${Vh} mL.` };
+    }
+
+    function q_pk_halfLife(){
+      const t12 = [4,6,8,12][randint(0,3)];
+      const hours = [t12, t12*2, t12*3, t12*4];
+      const stem = `A drug has t½ = ${t12} h. Approximately how long to reach ~97% steady state?`;
+      const choices=[`${t12*5} h`,`$${t12*3} h`,`$${t12*2} h`,`$${t12*6} h`].map(s=>s.replace('$',''));
+      return { topic:"PK — Steady state", stem, choices, correctIndex: 0, rationale:"~5 half-lives to reach ~97% steady state." };
+    }
+
+    function q_rems(){
+      const choices=["Isotretinoin — iPLEDGE","Clozapine — REMS for neutropenia","Thalidomide — REMS for teratogenicity","All of the above"];
+      return { topic:"Safety — REMS", stem:"Which medications are subject to REMS mitigating serious risks?", choices, correctIndex: 3, rationale:"All listed agents have REMS programs." };
+    }
+
+    function q_hiv_hlab(){
+      const choices=["HLA-B*5701 for abacavir","HLA-B*1502 for abacavir","HLA-B*5701 for efavirenz","No genetic testing required for abacavir"];
+      return { topic:"HIV — Pharmacogenetics", stem:"Which statement is correct?", choices, correctIndex: 0, rationale:"Screen for HLA-B*5701 before abacavir to avoid hypersensitivity." };
+    }
+
+    function q_asthma_step(){
+      const step = randint(1,5);
+      const stem = `A patient with persistent asthma (Step ${step}) has symptoms most days and nighttime awakenings weekly. Preferred controller?`;
+      const choices=["Low-dose ICS PRN","Low-dose ICS/LABA","Medium-dose ICS/LABA","Add LAMA or biologic"];
+      const idx = step<=2?1:(step===3?2:3);
+      return { topic:"Pulmonary — Asthma", stem, choices, correctIndex: idx, rationale:"Escalate from low-dose ICS to ICS/LABA and then to medium-dose; add-ons for higher steps." };
+    }
+
+    function q_ckd_acei(){
+      const k = (randint(35,55)/10).toFixed(1);
+      const scr = (randint(10,25)/10).toFixed(1);
+      const stem = `CKD with albuminuria on lisinopril; K ${k} mEq/L, SCr ${scr} mg/dL. Next best action?`;
+      const choices=["Continue ACEi and monitor","Stop ACEi due to SCr any rise","Add NSAID for pain","Add potassium supplement"];
+      const idx = parseFloat(k) <= 5.5 ? 0 : 1;
+      return { topic:"Renal — ACEi in CKD", stem, choices, correctIndex: idx, rationale:"ACEi beneficial in albuminuric CKD; monitor K/SCr. Hold if hyperkalemia or large SCr rise." };
+    }
+
+    function q_thyroid_preg(){
+      const choices=["Levothyroxine is treatment of choice","PTU is preferred throughout pregnancy","Stop thyroid therapy in pregnancy","Use liothyronine monotherapy"];
+      return { topic:"Endocrine — Thyroid & Pregnancy", stem:"Which is correct regarding hypothyroidism in pregnancy?", choices, correctIndex: 0, rationale:"Levothyroxine remains standard; adjust dose upward as needed." };
+    }
+
+    function q_anticoag_dvt(){
+      const choices=["Initiate DOAC unless contraindicated","Start aspirin","Start clopidogrel","Delay therapy until imaging repeats in 1 week"];
+      return { topic:"Heme — VTE", stem:"New proximal DVT confirmed without cancer or pregnancy. Best initial therapy?", choices, correctIndex: 0, rationale:"Guidelines favor DOACs for most patients without cancer/pregnancy." };
+    }
+
+    function q_vaccines_preg(){
+      const choices=["Influenza (inactivated) is safe","MMR is recommended","Varicella booster is safe","Live vaccines preferred in 2nd trimester"];
+      return { topic:"Vaccines — Pregnancy", stem:"Which is accurate?", choices, correctIndex: 0, rationale:"Inactivated influenza and Tdap are recommended; live vaccines contraindicated." };
+    }
+
+    // Build pools
+    const FACTORIES = {
+      therapeutics: [q_hf_addOn, q_af_chadsvasc, q_uTI, q_pna, q_diabetesInsulin, q_bisphosphonate, q_vancoTrough, q_qtAntipsych, q_trastuzumab, q_asthma_step, q_ckd_acei, q_thyroid_preg, q_anticoag_dvt, q_vaccines_preg],
+      safety: [q_rems, q_hiv_hlab, q_qtAntipsych, q_bisphosphonate, q_vancoTrough],
+      calculations: [q_calc_doseMgKg, q_calc_ivRate, q_calc_dextroseKcal, q_calc_mEqNaCl, q_pk_halfLife, q_alligation],
+      compounding: [q_alligation]
+    };
+
+    function generateQuestions() {
+      const arr = [];
+      function pull(cat, n){
+        const fns = FACTORIES[cat];
+        for(let i=0;i<n;i++){ arr.push(fns[randint(0,fns.length-1)]()); }
+      }
+      pull('therapeutics', TARGET.therapeutics);
+      pull('safety', TARGET.safety);
+      pull('calculations', TARGET.calculations);
+      pull('compounding', TARGET.compounding);
+      // If any shortfall/excess, adjust to TOTAL_QUESTIONS
+      while(arr.length < TOTAL_QUESTIONS){ arr.push( q_calc_ivRate() ); }
+      while(arr.length > TOTAL_QUESTIONS){ arr.pop(); }
+      return shuffle(arr).map((q,i)=>({id:i+1, ...q}));
+    }
+
+    // ========= STATE =========
+    let QUESTIONS = [];
+    let answers = {}; // id -> index
+    let page = 1;
+    let timerSecs = 0; let timerHandle = null;
+
+    function fmtTime(s){ const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); const r=s%60; const pad=n=>String(n).padStart(2,'0'); return `${pad(h)}:${pad(m)}:${pad(r)}`; }
+    function startTimer(){ const el=document.getElementById('timer'); timerHandle=setInterval(()=>{ timerSecs++; el.textContent=`Timer: ${fmtTime(timerSecs)}`; },1000); }
+    function stopTimer(){ if(timerHandle) clearInterval(timerHandle); }
+
+    function saveProgress(){ const payload={ QUESTIONS, answers, timerSecs, page, seed }; localStorage.setItem(EXAM_ID, JSON.stringify(payload)); }
+    function loadProgress(){ try{ const raw=localStorage.getItem(EXAM_ID); if(!raw) return null; return JSON.parse(raw);}catch{return null} }
+    function clearProgress(){ localStorage.removeItem(EXAM_ID); }
+
+    // ========= RENDER =========
+    function renderPagination(){
+      const el = document.getElementById('pagination');
+      el.innerHTML='';
+      const pages = Math.ceil(QUESTIONS.length / PAGE_SIZE);
+      for(let p=1;p<=pages;p++){
+        const b=document.createElement('button'); b.className='pageBtn' + (page===p?' active':''); b.textContent=String(p); b.addEventListener('click', ()=>{ page=p; renderExam(); saveProgress(); window.scrollTo({top:0,behavior:'smooth'}); }); el.appendChild(b);
+      }
+    }
+
+    function renderExam(){
+      document.getElementById('qcount').textContent = String(QUESTIONS.length);
+      renderPagination();
+      const wrap = document.getElementById('qwrap');
+      wrap.innerHTML='';
+      const start = (page-1)*PAGE_SIZE; const end = Math.min(start+PAGE_SIZE, QUESTIONS.length);
+      for(let i=start;i<end;i++){
+        const q=QUESTIONS[i];
+        const qDiv=document.createElement('div'); qDiv.className='question';
+        const title=document.createElement('div'); title.className='qtitle'; title.textContent=`Q${q.id}. ${q.topic}`;
+        const stem=document.createElement('div'); stem.className='qstem'; stem.textContent=q.stem;
+        const opts=document.createElement('div'); opts.className='options';
+        q.choices.forEach((c,idx)=>{
+          const label=document.createElement('label'); label.className='opt';
+          const radio=document.createElement('input'); radio.type='radio'; radio.name=`q_${q.id}`; radio.value=idx; radio.checked=(answers[q.id]===idx);
+          radio.addEventListener('change', ()=>{ answers[q.id]=idx; saveProgress(); });
+          const span=document.createElement('span'); span.textContent=String.fromCharCode(65+idx)+'. '+c;
+          label.appendChild(radio); label.appendChild(span); opts.appendChild(label);
+        });
+        qDiv.appendChild(title); qDiv.appendChild(stem); qDiv.appendChild(opts); wrap.appendChild(qDiv);
+      }
+    }
+
+    function grade(){
+      stopTimer(); saveProgress();
+      let correct=0, attempted=0; const incorrect=[];
+      for(const q of QUESTIONS){ if(answers[q.id]!==undefined) attempted++; if(answers[q.id]===q.correctIndex) correct++; else incorrect.push(q); }
+      const percent = Math.round((correct/QUESTIONS.length)*100);
+      const res=document.getElementById('results'); res.innerHTML='';
+      const box=document.createElement('div'); box.className='scoreBox';
+      const h=document.createElement('div'); h.innerHTML = `<strong>Score:</strong> ${correct}/${QUESTIONS.length} (${percent}%)`;
+      const t=document.createElement('div'); t.textContent = `Time: ${fmtTime(timerSecs)} | Attempted: ${attempted}/${QUESTIONS.length}`;
+      const band=document.createElement('div'); band.innerHTML = percent>=85?'<span class="good">Excellent readiness</span>': percent>=70?'<span class="warn">Passing-range readiness</span>':'<span class="bad">Below target — review weak areas</span>';
+      box.appendChild(h); box.appendChild(t); box.appendChild(band); res.appendChild(box);
+
+      const details=document.createElement('details'); details.open=true; const sum=document.createElement('summary'); sum.textContent=`Review Only Incorrect Items (${incorrect.length})`; details.appendChild(sum);
+      incorrect.forEach(q=>{
+        const div=document.createElement('div'); div.className='incorrectItem';
+        const hdr=document.createElement('div'); hdr.innerHTML=`<strong>Q${q.id}: ${q.topic}</strong>`;
+        const stem=document.createElement('div'); stem.textContent=q.stem;
+        const yourIdx=answers[q.id]; const your=document.createElement('div'); your.innerHTML=`<span class="incorrect">Your answer:</span> ${yourIdx!==undefined? String.fromCharCode(65+yourIdx)+'. '+q.choices[yourIdx]:'No answer'}`;
+        const corr=document.createElement('div'); corr.innerHTML=`<span class="correct">Correct answer:</span> ${String.fromCharCode(65+q.correctIndex)}. ${q.choices[q.correctIndex]}`;
+        const why=document.createElement('div'); why.style.color='var(--muted)'; why.textContent = `Rationale: ${q.rationale}`;
+        div.appendChild(hdr); div.appendChild(stem); div.appendChild(your); div.appendChild(corr); div.appendChild(why); details.appendChild(div);
+      });
+      res.appendChild(details);
+      res.style.display='block';
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    // ========= EVENTS =========
+    document.getElementById('hintBtn').addEventListener('click', ()=>{ const m=document.getElementById('masked'); m.textContent=examPassword; m.style.borderColor='var(--accent)'; m.style.color='var(--accent)'; });
+
+    document.getElementById('beginBtn').addEventListener('click', ()=>{
+      const entered=document.getElementById('pw').value.trim(); if(entered!==examPassword){ alert('Incorrect password.'); return; }
+      const maybe=loadProgress();
+      if(maybe && maybe.QUESTIONS && maybe.QUESTIONS.length===TOTAL_QUESTIONS){ QUESTIONS=maybe.QUESTIONS; answers=maybe.answers||{}; timerSecs=maybe.timerSecs||0; page=maybe.page||1; seed=maybe.seed||seed; }
+      else { QUESTIONS = generateQuestions(); answers={}; page=1; timerSecs=0; saveProgress(); }
+      document.getElementById('gate').style.display='none'; document.getElementById('meta').style.display='flex'; document.getElementById('controls').style.display='flex'; document.getElementById('exam').style.display='block';
+      renderExam(); startTimer();
+    });
+
+    document.getElementById('submitBtn').addEventListener('click', grade);
+    document.getElementById('saveBtn').addEventListener('click', ()=>{ saveProgress(); alert('Progress saved to this browser.'); });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{ if(!confirm('Reset exam progress?')) return; stopTimer(); clearProgress(); window.location.reload(); });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data = JSON.stringify({answers, timerSecs, page}, null, 2);
+      const blob = new Blob([data], {type:'application/json'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='naplex_225_answers.json'; a.click(); URL.revokeObjectURL(url);
+    });
+    document.getElementById('newFormBtn').addEventListener('click', ()=>{
+      const admin = prompt('Enter admin refresh password to generate a NEW randomized exam:');
+      if(admin !== REFRESH_PASSWORD){ alert('Incorrect admin password.'); return; }
+      const newPw = prompt('Enter a NEW exam password for this form (must be different from the current password):');
+      if(!newPw){ alert('Password cannot be empty.'); return; }
+      if(newPw === examPassword){ alert('Please enter a different password than the current one.'); return; }
+      // Generate a new seed and new question set
+      seed = Math.floor(Date.now() % 2147483647);
+      QUESTIONS = generateQuestions();
+      answers = {}; page = 1; timerSecs = 0;
+      examPassword = newPw; // update the exam password
+      clearProgress(); saveProgress();
+
+      // Reset UI back to the gate to require the new password
+      document.getElementById('exam').style.display='none';
+      document.getElementById('meta').style.display='none';
+      document.getElementById('controls').style.display='none';
+      document.getElementById('results').style.display='none';
+      document.getElementById('pw').value='';
+      const masked = document.getElementById('masked');
+      if(masked){ masked.textContent = '••••••••'; masked.style.borderColor='var(--border)'; masked.style.color='var(--muted)'; }
+      document.getElementById('gate').style.display='grid';
+      alert('A brand-new randomized exam has been generated. Share the NEW exam password with students to begin.');
+    });
+    document.getElementById('exportBtn').addEventListener('click', ()=>{
+      const data = JSON.stringify({answers, timerSecs, page}, null, 2);
+      const blob = new Blob([data], {type:'application/json'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='naplex_225_answers.json'; a.click(); URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
